@@ -1,0 +1,1156 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Treasure Quest 3D Pixel - Game Cari Harta Karun</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js Library untuk Grafik 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Retro Pixel Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #0b0f19;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .font-pixel {
+            font-family: 'Press Start 2P', monospace;
+        }
+
+        /* Rendering Pixel Art Canvas */
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* Retro UI Elements */
+        .pixel-card {
+            background: rgba(18, 24, 38, 0.92);
+            border: 4px solid #f59e0b;
+            box-shadow: 0 8px 0 #78350f, inset 0 0 15px rgba(245, 158, 11, 0.2);
+            border-radius: 8px;
+        }
+
+        .pixel-btn {
+            background: #f59e0b;
+            color: #000;
+            border: 3px solid #fff;
+            box-shadow: 0 5px 0 #b45309;
+            transition: all 0.1s ease;
+            touch-action: manipulation;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .pixel-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #b45309;
+        }
+
+        /* Touch Virtual Joystick Base Styling */
+        #joystickContainer {
+            width: 130px;
+            height: 130px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 3px solid rgba(245, 158, 11, 0.6);
+            border-radius: 50%;
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            touch-action: none;
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #joystickKnob {
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, #fbbf24 0%, #d97706 100%);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            position: absolute;
+            pointer-events: none;
+        }
+
+        /* Action Button */
+        .action-btn {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            border: 3px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 6px 0 #7f1d1d, 0 8px 15px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            touch-action: manipulation;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .pixel-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #b45309;
+        }
+
+        /* Touch Virtual Joystick Base Styling */
+        #joystickContainer {
+            width: 130px;
+            height: 130px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 3px solid rgba(245, 158, 11, 0.6);
+            border-radius: 50%;
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            touch-action: none;
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #joystickKnob {
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, #fbbf24 0%, #d97706 100%);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            position: absolute;
+            pointer-events: none;
+        }
+
+        /* Action Button */
+        .action-btn {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            border: 3px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 6px 0 #7f1d1d, 0 8px 15px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .action-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #7f1d1d;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen relative select-none overflow-hidden">
+
+    <!-- 3D WebGL Canvas -->
+    <div id="webgl-container" class="absolute inset-0 w-full h-full"></div>
+
+    <!-- HUD USER INTERFACE -->
+    <div id="gameHUD" class="hidden absolute inset-x-0 top-0 p-4 z-20 flex justify-between items-start pointer-events-none">
+        <!-- Status Pemain: Nyawa & Kunci -->
+        <div class="pixel-card p-3 flex flex-col gap-2 min-w-[160px] pointer-events-auto">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-pixel text-yellow-400">NYAWA:</span>
+                <div id="healthHearts" class="flex gap-1 text-red-500 text-sm">
+                    <i class="fa-solid fa-heart"></i>
+                    <i class="fa-solid fa-heart"></i>
+                    <i class="fa-solid fa-heart"></i>
+                </div>
+            </div>
+            <div class="flex items-center justify-between text-xs font-pixel">
+                <span class="text-cyan-400">KUNCI:</span>
+                <span id="keysCount" class="text-yellow-300 font-bold">0 / 3 🔑</span>
+            </div>
+            <div class="flex items-center justify-between text-xs font-pixel">
+                <span class="text-emerald-400">PERMATA:</span>
+                <span id="gemsCount" class="text-emerald-300 font-bold">0 💎</span>
+            </div>
+        </div>
+
+        <!-- Mini-Kompas & Petunjuk Misi -->
+        <div class="flex flex-col items-end gap-2 pointer-events-auto">
+            <div class="pixel-card px-4 py-2 text-center">
+                <div class="text-[10px] font-pixel text-yellow-400 mb-1">TARGET MISI</div>
+                <div id="missionText" class="text-xs text-white font-bold">Kumpulkan 3 Kunci Emas!</div>
+            </div>
+            <button id="pauseBtn" class="pixel-btn px-3 py-2 text-xs font-pixel flex items-center gap-1">
+                <i class="fa-solid fa-pause"></i> PAUSE
+            </button>
+        </div>
+    </div>
+
+    <!-- TOUCH CONTROLS (VIRTUAL JOYSTICK & JUMP BUTTON) -->
+    <div id="touchControls" class="hidden absolute inset-0 z-20 pointer-events-none">
+        <!-- Joystick Area Kiri -->
+        <div id="joystickContainer" class="pointer-events-auto">
+            <div id="joystickKnob"></div>
+        </div>
+        <!-- Tombol Aksi Kanan (Lompat) -->
+        <div class="absolute bottom-8 right-8 pointer-events-auto flex flex-col gap-3 items-center">
+            <button id="jumpBtn" class="action-btn">
+                <i class="fa-solid fa-angles-up"></i>
+            </button>
+            <span class="text-[10px] font-pixel text-yellow-400 shadow-black drop-shadow">LOMPAT</span>
+        </div>
+    </div>
+
+    <!-- OVERLAY MENU UTAMA -->
+    <div id="startMenu" class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="pixel-card max-w-md w-full p-6 text-center space-y-6">
+            <div class="space-y-2">
+                <h1 class="text-2xl md:text-3xl font-pixel text-yellow-400 drop-shadow-[0_4px_0_#b45309]">
+                    TREASURE QUEST
+                </h1>
+                <p class="text-xs font-pixel text-cyan-300">3D PIXEL EXPLORER</p>
+            </div>
+
+            <div class="bg-slate-900/80 p-4 rounded border border-amber-500/40 text-left text-xs space-y-3 font-semibold text-gray-200">
+                <div class="text-yellow-400 font-pixel text-[11px] text-center mb-2">📜 PETUNJUK PETALANG:</div>
+                <p>1. Jelajahi Pulau Pixel 3D dan temukan <b>3 Kunci Emas</b> 🔑.</p>
+                <p>2. Waspadai <b>Perangkap Duri</b> ⚠️ dan <b>Goblin Jahat</b> 👺!</p>
+                <p>3. Buka <b>Peti Harta Karun Legendaris</b> di pusat pulau untuk menang! 🏆</p>
+                <div class="border-t border-gray-700 pt-2 text-[10px] text-cyan-300">
+                    <div><b>Kontrol HP:</b> Virtual Joystick & Tombol Lompat</div>
+                    <div><b>Kontrol PC:</b> WASD / Panah & Spasi untuk Lompat</div>
+                </div>
+            </div>
+
+            <button id="startBtn" class="pixel-btn w-full py-4 text-sm font-pixel tracking-wider">
+                <i class="fa-solid fa-compass mr-2"></i> MULAI PETUALANGAN
+            </button>
+        </div>
+    </div>
+
+    <!-- OVERLAY GAME OVER -->
+    <div id="gameOverMenu" class="hidden absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-4">
+        <div class="pixel-card max-w-sm w-full p-6 text-center space-y-5 border-red-600 shadow-[0_8px_0_#991b1b]">
+            <h2 class="text-2xl font-pixel text-red-500 animate-bounce">GAMEOVER</h2>
+            <p class="text-xs font-pixel text-gray-300">Kamu terjebak di pulau harta karun!</p>
+
+            <div class="bg-slate-900 p-3 rounded text-xs font-pixel text-yellow-400 space-y-1">
+                <div>Permata Terkumpul: <span id="finalGems" class="text-white">0</span> 💎</div>
+            </div>
+
+            <button id="restartBtn" class="pixel-btn w-full py-3 text-xs font-pixel">
+                <i class="fa-solid fa-rotate-right mr-2"></i> COBA LAGI
+            </button>
+        </div>
+    </div>
+
+    <!-- OVERLAY KEMENANGAN (WIN) -->
+    <div id="winMenu" class="hidden absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-4">
+        <div class="pixel-card max-w-sm w-full p-6 text-center space-y-5 border-emerald-500 shadow-[0_8px_0_#065f46]">
+            <h2 class="text-xl font-pixel text-yellow-400 animate-pulse">VICTORY! 🏆</h2>
+            <p class="text-xs font-pixel text-emerald-300">Selamat! Kamu menemukan Harta Karun Legendaris!</p>
+
+            <div class="bg-slate-900 p-4 rounded text-xs font-pixel space-y-2 text-left">
+                <div class="text-yellow-400 flex justify-between"><span>Kunci Emas:</span> <span>3 / 3 🔑</span></div>
+                <div class="text-emerald-400 flex justify-between"><span>Permata:</span> <span id="winGems">0 💎</span></div>
+                <div class="text-cyan-400 flex justify-between"><span>Sisa Nyawa:</span> <span id="winHearts">3 ❤️</span></div>
+            </div>
+
+            <button id="playAgainBtn" class="pixel-btn w-full py-3 text-xs font-pixel">
+                <i class="fa-solid fa-crown mr-2"></i> MAIN LAGI
+            </button>
+        </div>
+    </div>
+
+    <!-- LOGIKA JAVASCRIPT GAME -->
+    <script>
+        /**
+         * 1. AUDIO ENGINE (Sintesis Efek Suara Retro 8-bit & Musik Latar)
+         */
+        class RetroAudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playTone(freq, type, duration, gainVal = 0.1) {
+                if (this.muted || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch (e) {}
+            }
+
+            playJump() {
+                if (this.muted || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(400, this.ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            }
+
+            playCollectKey() {
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, i) => {
+                    setTimeout(() => this.playTone(freq, 'triangle', 0.12, 0.1), i * 60);
+                });
+            }
+
+            playCollectGem() {
+                this.playTone(987.77, 'sine', 0.08, 0.08);
+                setTimeout(() => this.playTone(1318.51, 'sine', 0.12, 0.08), 70);
+            }
+
+            playHurt() {
+                this.playTone(120, 'sawtooth', 0.25, 0.15);
+            }
+
+            playWin() {
+                const notes = [440, 554, 659, 880, 659, 880];
+                notes.forEach((freq, i) => {
+                    setTimeout(() => this.playTone(freq, 'square', 0.2, 0.12), i * 120);
+                });
+            }
+        }
+
+        const audio = new RetroAudioEngine();
+
+        /**
+         * 2. PIXEL TEXTURE GENERATOR (Membuat Tekstur Pixel 3D Secara Procedural)
+         */
+        function createPixelTexture(type) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 16;
+            canvas.height = 16;
+            const ctx = canvas.getContext('2d');
+
+            if (type === 'grass') {
+                ctx.fillStyle = '#4ade80';
+                ctx.fillRect(0, 0, 16, 16);
+                ctx.fillStyle = '#16a34a';
+                for(let i=0; i<30; i++) {
+                    ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 2, 2);
+                }
+            } else if (type === 'stone') {
+                ctx.fillStyle = '#64748b';
+                ctx.fillRect(0, 0, 16, 16);
+                ctx.fillStyle = '#334155';
+                for(let i=0; i<25; i++) {
+                    ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 2, 2);
+                }
+            } else if (type === 'wood') {
+                ctx.fillStyle = '#b45309';
+                ctx.fillRect(0, 0, 16, 16);
+                ctx.fillStyle = '#78350f';
+                ctx.fillRect(0, 4, 16, 2);
+                ctx.fillRect(0, 10, 16, 2);
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.magFilter = THREE.NearestFilter;
+            texture.minFilter = THREE.NearestFilter;
+            return texture;
+        }
+
+        const textures = {
+            grass: createPixelTexture('grass'),
+            stone: createPixelTexture('stone'),
+            wood: createPixelTexture('wood')
+        };
+
+        /**
+         * 3. THREE.JS GAME SCENE SETUP & GAME ENGINE
+         */
+        let scene, camera, renderer;
+        let playerGroup, playerMesh;
+        let gameState = 'MENU';
+        
+        // Stats Pemain
+        let health = 3;
+        let keysFound = 0;
+        let gemsFound = 0;
+        let isInvulnerable = false;
+
+        // Pergerakan Vector Input (Joystick + Keyboard)
+        const moveInput = { x: 0, y: 0 };
+        let playerVelocityY = 0;
+        let isGrounded = true;
+
+        // Bounding Boxes / Elemen Dunia Game
+        let colliders = [];
+        let keysList = [];
+        let gemsList = [];
+        let trapsList = [];
+        let masterChest = null;
+        let guardsList = [];
+
+        function initThreeJS() {
+            const container = document.getElementById('webgl-container');
+
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color('#0b0f19');
+            scene.fog = new THREE.FogExp2('#0b0f19', 0.025);
+
+            // Camera setup (Third Person Orthographic/Perspective Hybrid)
+            camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 18, 22);
+
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // Lightings
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xfffbeb, 0.8);
+            dirLight.position.set(30, 50, 20);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 150;
+            const d = 40;
+            dirLight.shadow.camera.left = -d;
+            dirLight.shadow.camera.right = d;
+            dirLight.shadow.camera.top = d;
+            dirLight.shadow.camera.bottom = -d;
+            scene.add(dirLight);
+
+            // Build World Terrain & Objects
+            buildWorld();
+            createPlayer();
+
+            // Resize Listener
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        /**
+         * 4. ANATOMI VOXEL KARAKTER PEMAIN & MUSUH
+         */
+        function createPlayer() {
+            playerGroup = new THREE.Group();
+
+            // Badan Voxel Karakter (Pirate/Explorer)
+            const bodyGeo = new THREE.BoxGeometry(1.2, 1.4, 0.8);
+            const bodyMat = new THREE.MeshLambertMaterial({ color: 0xef4444 }); // Baju Merah
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 1.1;
+            body.castShadow = true;
+            playerGroup.add(body);
+
+            // Kepala Voxel
+            const headGeo = new THREE.BoxGeometry(1, 1, 1);
+            const headMat = new THREE.MeshLambertMaterial({ color: 0xfde047 }); // Kulit Kuning Pixel
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 2.3;
+            head.castShadow = true;
+            playerGroup.add(head);
+
+            // Topi Petualang
+            const hatGeo = new THREE.BoxGeometry(1.4, 0.3, 1.4);
+            const hatMat = new THREE.MeshLambertMaterial({ color: 0x78350f });
+            const hat = new THREE.Mesh(hatGeo, hatMat);
+            hat.position.y = 2.9;
+            hat.castShadow = true;
+            playerGroup.add(hat);
+
+            // Mata Voxel
+            const eyeGeo = new THREE.BoxGeometry(0.2, 0.2, 0.1);
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const eye1 = new THREE.Mesh(eyeGeo, eyeMat);
+            eye1.position.set(-0.25, 2.35, 0.51);
+            const eye2 = eye1.clone();
+            eye2.position.x = 0.25;
+            playerGroup.add(eye1);
+            playerGroup.add(eye2);
+
+            playerGroup.position.set(0, 0, 18);
+            scene.add(playerGroup);
+        }
+
+        /**
+         * 5. MEMBANGUN PULAU RINTANGAN & HARTA KARUN 3D
+         */
+        function buildWorld() {
+            colliders = [];
+            keysList = [];
+            gemsList = [];
+            trapsList = [];
+            guardsList = [];
+
+            // Ground Island Base (40x40 Blocks Grid)
+            const islandGeo = new THREE.BoxGeometry(50, 2, 50);
+            const islandMat = new THREE.MeshLambertMaterial({ map: textures.grass });
+            const island = new THREE.Mesh(islandGeo, islandMat);
+            island.position.y = -1;
+            island.receiveShadow = true;
+            scene.add(island);
+
+            // Lautan Air Biru di sekeliling pulau
+            const waterGeo = new THREE.PlaneGeometry(200, 200);
+            const waterMat = new THREE.MeshLambertMaterial({ color: 0x0284c7, transparent: true, opacity: 0.8 });
+            const water = new THREE.Mesh(waterGeo, waterMat);
+            water.rotation.x = -Math.PI / 2;
+            water.position.y = -1.8;
+            scene.add(water);
+
+            // Pagar Tembok Batu Pembatas Pulau
+            const wallMat = new THREE.MeshLambertMaterial({ map: textures.stone });
+            for(let x = -24; x <= 24; x += 4) {
+                createWallBlock(x, 1, -24, wallMat);
+                createWallBlock(x, 1, 24, wallMat);
+                createWallBlock(-24, 1, x, wallMat);
+                createWallBlock(24, 1, x, wallMat);
+            }
+
+            // Labirin & Dinding Rintangan Internal
+            const innerWalls = [
+                // Obstacle Zone 1
+                {x: -10, z: 10, w: 12, h: 3, d: 2},
+                {x: 10, z: 10, w: 2, h: 3, d: 12},
+                // Obstacle Zone 2
+                {x: -12, z: -8, w: 2, h: 3, d: 14},
+                {x: 8, z: -10, w: 14, h: 3, d: 2},
+                // Gate to Center
+                {x: -6, z: 0, w: 6, h: 4, d: 2},
+                {x: 6, z: 0, w: 6, h: 4, d: 2}
+            ];
+
+            innerWalls.forEach(w => {
+                const geo = new THREE.BoxGeometry(w.w, w.h, w.d);
+                const mesh = new THREE.Mesh(geo, wallMat);
+                mesh.position.set(w.x, w.h / 2, w.z);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                scene.add(mesh);
+                colliders.push(new THREE.Box3().setFromObject(mesh));
+            });
+
+            // SPWAN KUNCI EMAS 🔑 (3 Buah di lokasi tersebar)
+            const keyLocations = [
+                {x: -18, z: 18},
+                {x: 18, z: -18},
+                {x: -18, z: -18}
+            ];
+            keyLocations.forEach(loc => spawnKey(loc.x, loc.z));
+
+            // SPAWN PERMATA 💎
+            const gemLocations = [
+                {x: 0, z: 12}, {x: -12, z: 4}, {x: 12, z: 4}, {x: -8, z: -16}, {x: 8, z: -16}
+            ];
+            gemLocations.forEach(loc => spawnGem(loc.x, loc.z));
+
+            // SPAWN PERANGKAP DURI (SPIKES ⚠️)
+            const trapLocations = [
+                {x: -5, z: 12}, {x: 5, z: 12}, {x: 0, z: -8}, {x: -15, z: -4}, {x: 15, z: -4}
+            ];
+            trapLocations.forEach(loc => spawnSpikeTrap(loc.x, loc.z));
+
+            // SPAWN GOBLIN VILLAINS 👺 (Patroli & Mengejar Pemain)
+            spawnGoblin(-16, 8, 'Z');
+            spawnGoblin(16, -6, 'X');
+            spawnGoblin(0, 6, 'X');
+            spawnGoblin(-12, -14, 'Z');
+
+            // SPAWN PETI HARTA KARUN UTAMA (MASTER CHEST) DI PUSAT PULAU
+            spawnMasterChest(0, -2);
+        }
+
+        function createWallBlock(x, y, z, mat) {
+            const geo = new THREE.BoxGeometry(4, 4, 4);
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            colliders.push(new THREE.Box3().setFromObject(mesh));
+        }
+
+        function spawnKey(x, z) {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.8, roughness: 0.2 });
+
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.12, 8, 16), mat);
+            ring.position.y = 1.2;
+            group.add(ring);
+
+            const stem = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.8, 0.12), mat);
+            stem.position.y = 0.6;
+            group.add(stem);
+
+            group.position.set(x, 0.5, z);
+            scene.add(group);
+            keysList.push({ mesh: group, x: x, z: z, collected: false });
+        }
+
+        function spawnGem(x, z) {
+            const geo = new THREE.OctahedronGeometry(0.4);
+            const mat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.1, emissive: 0x047857 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, 1, z);
+            scene.add(mesh);
+            gemsList.push({ mesh: mesh, x: x, z: z, collected: false });
+        }
+
+        function spawnSpikeTrap(x, z) {
+            const group = new THREE.Group();
+            const spikeMat = new THREE.MeshLambertMaterial({ color: 0x94a3b8 });
+
+            for(let i = -0.6; i <= 0.6; i += 0.6) {
+                for(let j = -0.6; j <= 0.6; j += 0.6) {
+                    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.7, 4), spikeMat);
+                    spike.position.set(i, 0.35, j);
+                    group.add(spike);
+                }
+            }
+            group.position.set(x, 0, z);
+            scene.add(group);
+            trapsList.push({ x: x, z: z, radius: 1.2 });
+        }
+
+        // MEMBUAT MODEL VOXEL 3D GOBLIN
+        function createGoblinMesh() {
+            const goblinGroup = new THREE.Group();
+
+            // Badan (Baju Zirah Kulit Gelap)
+            const bodyGeo = new THREE.BoxGeometry(1.0, 1.1, 0.7);
+            const bodyMat = new THREE.MeshLambertMaterial({ color: 0x3f6212 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.8;
+            body.castShadow = true;
+            goblinGroup.add(body);
+
+            // Kepala Goblin Hijau
+            const headGeo = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+            const headMat = new THREE.MeshLambertMaterial({ color: 0x22c55e });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 1.7;
+            head.castShadow = true;
+            goblinGroup.add(head);
+
+            // Telinga Lancip Goblin
+            const earGeo = new THREE.BoxGeometry(0.45, 0.25, 0.15);
+            const earMat = new THREE.MeshLambertMaterial({ color: 0x16a34a });
+            const earL = new THREE.Mesh(earGeo, earMat);
+            earL.position.set(-0.6, 1.75, 0);
+            earL.rotation.z = 0.25;
+            const earR = earL.clone();
+            earR.position.x = 0.6;
+            earR.rotation.z = -0.25;
+            goblinGroup.add(earL);
+            goblinGroup.add(earR);
+
+            // Mata Merah Menyala
+            const eyeGeo = new THREE.BoxGeometry(0.2, 0.2, 0.1);
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+            const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+            eyeL.position.set(-0.22, 1.75, 0.46);
+            const eyeR = eyeL.clone();
+            eyeR.position.x = 0.22;
+            goblinGroup.add(eyeL);
+            goblinGroup.add(eyeR);
+
+            // Pisau / Belati Goblin
+            const weaponGroup = new THREE.Group();
+            const blade = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.7, 0.15), new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 }));
+            blade.position.y = 0.35;
+            weaponGroup.add(blade);
+            weaponGroup.position.set(0.65, 0.8, 0.3);
+            weaponGroup.rotation.x = Math.PI / 4;
+            goblinGroup.add(weaponGroup);
+
+            return goblinGroup;
+        }
+
+        function spawnGoblin(x, z, dir) {
+            const goblinMesh = createGoblinMesh();
+            goblinMesh.position.set(x, 0, z);
+            scene.add(goblinMesh);
+
+            guardsList.push({
+                mesh: goblinMesh,
+                startX: x,
+                startZ: z,
+                dir: dir,
+                range: 10,
+                speed: 0.065,
+                step: Math.random() * Math.PI * 2,
+                chasing: false
+            });
+        }
+
+        function spawnMasterChest(x, z) {
+            const group = new THREE.Group();
+            
+            // Kotak Peti
+            const base = new THREE.Mesh(
+                new THREE.BoxGeometry(2, 1.2, 1.4),
+                new THREE.MeshStandardMaterial({ map: textures.wood })
+            );
+            base.position.y = 0.6;
+            base.castShadow = true;
+            group.add(base);
+
+            // Tutup Peti
+            const lid = new THREE.Mesh(
+                new THREE.BoxGeometry(2.1, 0.5, 1.5),
+                new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.5 })
+            );
+            lid.position.y = 1.35;
+            lid.castShadow = true;
+            group.add(lid);
+
+            // Gembok Emas Peti
+            const lock = new THREE.Mesh(
+                new THREE.BoxGeometry(0.4, 0.4, 0.2),
+                new THREE.MeshStandardMaterial({ color: 0xfef08a, metalness: 0.9 })
+            );
+            lock.position.set(0, 1.0, 0.75);
+            group.add(lock);
+
+            group.position.set(x, 0, z);
+            scene.add(group);
+            masterChest = { mesh: group, x: x, z: z };
+        }
+
+        /**
+         * 6. SYSTEM CONTROLLER (TOUCH JOYSTICK & KEYBOARD)
+         */
+        const joystickContainer = document.getElementById('joystickContainer');
+        const joystickKnob = document.getElementById('joystickKnob');
+        let touchId = null;
+        let joystickCenter = { x: 0, y: 0 };
+
+        function setupControls() {
+            // Touch Joystick Events
+            joystickContainer.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.changedTouches[0];
+                touchId = touch.identifier;
+                const rect = joystickContainer.getBoundingClientRect();
+                joystickCenter = {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2
+                };
+                updateJoystick(touch.clientX, touch.clientY);
+            }, { passive: false });
+
+            window.addEventListener('touchmove', (e) => {
+                if (touchId === null) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === touchId) {
+                        updateJoystick(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+                        break;
+                    }
+                }
+            }, { passive: false });
+
+            window.addEventListener('touchend', (e) => {
+                if (touchId === null) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === touchId) {
+                        resetJoystick();
+                        break;
+                    }
+                }
+            });
+
+            // Touch Jump Button
+            const jumpBtn = document.getElementById('jumpBtn');
+            jumpBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                playerJump();
+            });
+            jumpBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                playerJump();
+            });
+
+            // Keyboard Controls (WASD / Panah)
+            const keysPressed = {};
+            window.addEventListener('keydown', (e) => {
+                keysPressed[e.code] = true;
+                if (e.code === 'Space') playerJump();
+                updateKeyboardInput(keysPressed);
+            });
+
+            window.addEventListener('keyup', (e) => {
+                keysPressed[e.code] = false;
+                updateKeyboardInput(keysPressed);
+            });
+        }
+
+        function updateJoystick(clientX, clientY) {
+            const maxRadius = 45;
+            let dx = clientX - joystickCenter.x;
+            let dy = clientY - joystickCenter.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist > maxRadius) {
+                dx = (dx / dist) * maxRadius;
+                dy = (dy / dist) * maxRadius;
+            }
+
+            joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+            
+            // Normalized input (-1 to 1)
+            moveInput.x = dx / maxRadius;
+            moveInput.y = dy / maxRadius;
+        }
+
+        function resetJoystick() {
+            touchId = null;
+            joystickKnob.style.transform = `translate(0px, 0px)`;
+            moveInput.x = 0;
+            moveInput.y = 0;
+        }
+
+        function updateKeyboardInput(keys) {
+            if (touchId !== null) return; // Touch Priority
+
+            let x = 0;
+            let y = 0;
+            if (keys['KeyA'] || keys['ArrowLeft']) x -= 1;
+            if (keys['KeyD'] || keys['ArrowRight']) x += 1;
+            if (keys['KeyW'] || keys['ArrowUp']) y -= 1;
+            if (keys['KeyS'] || keys['ArrowDown']) y += 1;
+
+            // Normalize diagonal
+            const len = Math.hypot(x, y);
+            if (len > 0) {
+                moveInput.x = x / len;
+                moveInput.y = y / len;
+            } else {
+                moveInput.x = 0;
+                moveInput.y = 0;
+            }
+        }
+
+        function playerJump() {
+            if (gameState === 'PLAYING' && isGrounded) {
+                playerVelocityY = 0.22;
+                isGrounded = false;
+                audio.playJump();
+            }
+        }
+
+        /**
+         * 7. GAMELOOP & LOGIKA INTERAKSI
+         */
+        function startGame() {
+            audio.init();
+            health = 3;
+            keysFound = 0;
+            gemsFound = 0;
+            isInvulnerable = false;
+            
+            playerGroup.position.set(0, 0, 18);
+            playerVelocityY = 0;
+            isGrounded = true;
+
+            // Reset Item State
+            keysList.forEach(k => { k.collected = false; k.mesh.visible = true; });
+            gemsList.forEach(g => { g.collected = false; g.mesh.visible = true; });
+
+            updateHUD();
+
+            gameState = 'PLAYING';
+            document.getElementById('startMenu').classList.add('hidden');
+            document.getElementById('gameOverMenu').classList.add('hidden');
+            document.getElementById('winMenu').classList.add('hidden');
+            document.getElementById('gameHUD').classList.remove('hidden');
+            document.getElementById('touchControls').classList.remove('hidden');
+        }
+
+        function takeDamage() {
+            if (isInvulnerable || gameState !== 'PLAYING') return;
+
+            health--;
+            audio.playHurt();
+            updateHUD();
+
+            if (health <= 0) {
+                gameOver();
+            } else {
+                // Efek Kebal Sementara (Invincibility Frames)
+                isInvulnerable = true;
+                let flashes = 0;
+                const interval = setInterval(() => {
+                    playerGroup.visible = !playerGroup.visible;
+                    flashes++;
+                    if (flashes >= 6) {
+                        clearInterval(interval);
+                        playerGroup.visible = true;
+                        isInvulnerable = false;
+                    }
+                }, 150);
+            }
+        }
+
+        function updateHUD() {
+            // Hearts Render
+            const heartsContainer = document.getElementById('healthHearts');
+            heartsContainer.innerHTML = '';
+            for(let i=0; i<3; i++) {
+                if (i < health) {
+                    heartsContainer.innerHTML += '<i class="fa-solid fa-heart"></i>';
+                } else {
+                    heartsContainer.innerHTML += '<i class="fa-regular fa-heart text-gray-600"></i>';
+                }
+            }
+
+            document.getElementById('keysCount').textContent = `${keysFound} / 3 🔑`;
+            document.getElementById('gemsCount').textContent = `${gemsFound} 💎`;
+
+            const missionText = document.getElementById('missionText');
+            if (keysFound < 3) {
+                missionText.textContent = `Temukan Kunci (${keysFound}/3)!`;
+            } else {
+                missionText.textContent = `Buka Peti Emas di Pusat Pulau! 🏆`;
+                missionText.className = "text-xs text-yellow-300 font-pixel animate-pulse";
+            }
+        }
+
+        function gameOver() {
+            gameState = 'GAMEOVER';
+            document.getElementById('finalGems').textContent = gemsFound;
+            document.getElementById('gameHUD').classList.add('hidden');
+            document.getElementById('touchControls').classList.add('hidden');
+            document.getElementById('gameOverMenu').classList.remove('hidden');
+        }
+
+        function gameWin() {
+            audio.playWin();
+            gameState = 'WIN';
+            document.getElementById('winGems').textContent = `${gemsFound} 💎`;
+            document.getElementById('winHearts').textContent = `${health} ❤️`;
+            document.getElementById('gameHUD').classList.add('hidden');
+            document.getElementById('touchControls').classList.add('hidden');
+            document.getElementById('winMenu').classList.remove('hidden');
+        }
+
+        function updateGame() {
+            if (gameState !== 'PLAYING') return;
+
+            const speed = 0.15;
+            const moveX = moveInput.x * speed;
+            const moveZ = moveInput.y * speed;
+
+            // Simpan posisi lama untuk pengecekan tabrakan (Collision)
+            const oldX = playerGroup.position.x;
+            const oldZ = playerGroup.position.z;
+
+            // Pergerakan Player Axis X & Z
+            if (moveX !== 0 || moveZ !== 0) {
+                playerGroup.position.x += moveX;
+                playerGroup.position.z += moveZ;
+
+                // Rotasi Karakter Menghadap Arah Jalan
+                const angle = Math.atan2(moveX, moveZ);
+                playerGroup.rotation.y = angle;
+
+                // Animasi Berjalan Wiggle Voxel
+                playerGroup.children[0].rotation.z = Math.sin(Date.now() * 0.015) * 0.1;
+            } else {
+                playerGroup.children[0].rotation.z = 0;
+            }
+
+            // Gravitasi & Lompat
+            playerGroup.position.y += playerVelocityY;
+            playerVelocityY -= 0.012; // Gravity strength
+
+            if (playerGroup.position.y <= 0) {
+                playerGroup.position.y = 0;
+                playerVelocityY = 0;
+                isGrounded = true;
+            }
+
+            // Pengecekan Tabrakan Dinding (Wall Collision Bounding Box)
+            const playerBox = new THREE.Box3().setFromObject(playerGroup);
+            for (let collider of colliders) {
+                if (playerBox.intersectsBox(collider)) {
+                    // Kembalikan ke posisi semula jika menabrak dinding
+                    playerGroup.position.x = oldX;
+                    playerGroup.position.z = oldZ;
+                    break;
+                }
+            }
+
+            // Smooth Camera Follow Player
+            camera.position.x = THREE.MathUtils.lerp(camera.position.x, playerGroup.position.x, 0.08);
+            camera.position.z = THREE.MathUtils.lerp(camera.position.z, playerGroup.position.z + 18, 0.08);
+            camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z);
+
+            // Animasi Rotasi Item & Ambil Kunci 🔑
+            keysList.forEach(k => {
+                if (!k.collected) {
+                    k.mesh.rotation.y += 0.03;
+                    const dist = Math.hypot(playerGroup.position.x - k.x, playerGroup.position.z - k.z);
+                    if (dist < 1.3) {
+                        k.collected = true;
+                        k.mesh.visible = false;
+                        keysFound++;
+                        audio.playCollectKey();
+                        updateHUD();
+                    }
+                }
+            });
+
+            // Animasi Rotasi Item & Ambil Permata 💎
+            gemsList.forEach(g => {
+                if (!g.collected) {
+                    g.mesh.rotation.y += 0.04;
+                    const dist = Math.hypot(playerGroup.position.x - g.x, playerGroup.position.z - g.z);
+                    if (dist < 1.2) {
+                        g.collected = true;
+                        g.mesh.visible = false;
+                        gemsFound += 5;
+                        audio.playCollectGem();
+                        updateHUD();
+                    }
+                }
+            });
+
+            // Pengecekan Perangkap Duri (Spikes)
+            trapsList.forEach(t => {
+                const dist = Math.hypot(playerGroup.position.x - t.x, playerGroup.position.z - t.z);
+                if (dist < t.radius && playerGroup.position.y < 0.3) {
+                    takeDamage();
+                }
+            });
+
+            // Update & AI Pengejaran Goblin 👺
+            guardsList.forEach(g => {
+                const distToPlayer = Math.hypot(playerGroup.position.x - g.mesh.position.x, playerGroup.position.z - g.mesh.position.z);
+                
+                // AI Goblin: Kejar pemain jika dalam jarak < 7.5 unit
+                if (distToPlayer < 7.5) {
+                    g.chasing = true;
+                    const angle = Math.atan2(playerGroup.position.x - g.mesh.position.x, playerGroup.position.z - g.mesh.position.z);
+                    g.mesh.rotation.y = angle;
+                    g.mesh.position.x += Math.sin(angle) * 0.06;
+                    g.mesh.position.z += Math.cos(angle) * 0.06;
+                } else {
+                    g.chasing = false;
+                    g.step += g.speed;
+                    const offset = Math.sin(g.step) * (g.range / 2);
+                    if (g.dir === 'X') {
+                        g.mesh.position.x = g.startX + offset;
+                        g.mesh.rotation.y = Math.cos(g.step) > 0 ? Math.PI / 2 : -Math.PI / 2;
+                    } else {
+                        g.mesh.position.z = g.startZ + offset;
+                        g.mesh.rotation.y = Math.cos(g.step) > 0 ? 0 : Math.PI;
+                    }
+                }
+
+                // Animasi Berjalan Goblin
+                g.mesh.children[0].rotation.z = Math.sin(Date.now() * 0.018) * 0.15;
+
+                // Tabrakan Goblin dengan Pemain
+                if (distToPlayer < 1.3 && playerGroup.position.y < 0.8) {
+                    takeDamage();
+                }
+            });
+
+            // Interaksi Peti Harta Karun Utama
+            const distChest = Math.hypot(playerGroup.position.x - masterChest.x, playerGroup.position.z - masterChest.z);
+            if (distChest < 1.8) {
+                if (keysFound >= 3) {
+                    // Tutup peti terbuka saat menang!
+                    masterChest.mesh.children[1].rotation.x = -Math.PI / 3;
+                    gameWin();
+                }
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updateGame();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize Everything on Load
+        window.onload = () => {
+            initThreeJS();
+            setupControls();
+            animate();
+
+            // Event Listeners UI
+            const bindBtn = (id, fn) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('click', fn);
+                    el.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        fn();
+                    });
+                }
+            };
+
+            bindBtn('startBtn', startGame);
+            bindBtn('restartBtn', startGame);
+            bindBtn('playAgainBtn', startGame);
+            bindBtn('pauseBtn', () => {
+                gameState = 'MENU';
+                document.getElementById('startMenu').classList.remove('hidden');
+                document.getElementById('gameHUD').classList.add('hidden');
+                document.getElementById('touchControls').classList.add('hidden');
+            });
+        };
+    </script>
+</body>
+</html>
+```
